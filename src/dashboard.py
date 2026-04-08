@@ -87,7 +87,7 @@ if st.button("Find Opportunities"):
 
         # 4️⃣ APPLY (ONLY AFTER df_results EXISTS)
         df_results["Decision"] = df_results.apply(decision_signal, axis=1)
-st.dataframe(df_results, use_container_width=True)
+        st.dataframe(df_results, use_container_width=True)
 
 
                 
