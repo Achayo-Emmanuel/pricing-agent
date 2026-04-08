@@ -1,80 +1,86 @@
 from openai import OpenAI
-import json
+import os
 
-from main import run_price_optimization_for_sku, run_batch_pricing
-from data import load_data, clean_data
-from features import build_features
+# Initialize client using environment variable
+from openai import OpenAI
+import os
 
+# Initialize client using environment variable
 client = OpenAI()
 
-df = load_data("data/OnlineRetail.csv")
-df = clean_data(df)
-df_feat = build_features(df)
+def explain_row(row):
+    """
+    Generate a short business explanation for a pricing recommendation.
+    Expects a pandas row with:
+    SKU, Recommended Price, Expected Profit, Confidence, Risk, Decision
+    """
 
-tools = [
-    {
-        "type": "function",
-        "name": "run_price_optimization_for_sku",
-        "description": "Recommend a price for a single SKU using the pricing engine.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "sku": {
-                    "type": "string",
-                    "description": "The product SKU to optimize."
-                }
-            },
-            "required": ["sku"],
-            "additionalProperties": False
-        }
-    },
-    {
-        "type": "function",
-        "name": "run_batch_pricing",
-        "description": "Return the top pricing opportunities across SKUs.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "top_n": {
-                    "type": "integer",
-                    "description": "How many top opportunities to return."
-                }
-            },
-            "required": ["top_n"],
-            "additionalProperties": False
-        }
-    }
-]
+    prompt = f"""
+    You are a pricing strategy expert.
 
-def call_tool(name, args):
-    if name == "run_price_optimization_for_sku":
-        return run_price_optimization_for_sku(df_feat, args["sku"])
-    if name == "run_batch_pricing":
-        return run_batch_pricing(df_feat, top_n=args["top_n"])
-    raise ValueError(f"Unknown tool: {name}")
+    Given the following recommendation:
 
-user_query = "What is the best price for SKU 10135?"
+    SKU: {row['SKU']}
+    Recommended Price: {row['Recommended Price']}
+    Expected Profit: {row['Expected Profit']}
+    Confidence: {row['Confidence']}
+    Risk: {row['Risk']}
+    Decision: {row['Decision']}
 
-response = client.responses.create(
-    model="gpt-5.4",
-    input=user_query,
-    tools=tools
-)
+    Explain in simple business language:
+    - Why this price is recommended
+    - What the risk level means
+    - What action should be taken
 
-for item in response.output:
-    if item.type == "function_call":
-        tool_name = item.name
-        tool_args = json.loads(item.arguments)
-        tool_result = call_tool(tool_name, tool_args)
+    Keep it concise (2–3 sentences).
+    """
 
-        followup = client.responses.create(
-            model="gpt-5.4",
-            previous_response_id=response.id,
-            input=[{
-                "type": "function_call_output",
-                "call_id": item.call_id,
-                "output": json.dumps(tool_result)
-            }]
+    try:
+        response = client.responses.create(
+            model="gpt-5-mini",
+            input=prompt
         )
 
-        print(followup.output_text)
+        return getattr(response, "output_text", "No explanation generated")
+
+    except Exception as e:
+        return f"Error generating explanation: {str(e)}"
+
+
+def explain_row(row):
+    """
+    Generate a short business explanation for a pricing recommendation.
+    Expects a pandas row with:
+    SKU, Recommended Price, Expected Profit, Confidence, Risk, Decision
+    """
+
+    prompt = f"""
+    You are a pricing strategy expert.
+
+    Given the following recommendation:
+
+    SKU: {row['SKU']}
+    Recommended Price: {row['Recommended Price']}
+    Expected Profit: {row['Expected Profit']}
+    Confidence: {row['Confidence']}
+    Risk: {row['Risk']}
+    Decision: {row['Decision']}
+
+    Explain in simple business language:
+    - Why this price is recommended
+    - What the risk level means
+    - What action should be taken
+
+    Keep it concise (2–3 sentences).
+    """
+
+    try:
+        response = client.responses.create(
+            model="gpt-5-mini",
+            input=prompt
+        )
+
+        return response.output_text
+
+    except Exception as e:
+        return f"Error generating explanation: {str(e)}"

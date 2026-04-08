@@ -3,6 +3,7 @@ import streamlit as st
 from main import run_price_optimization_for_sku, run_batch_pricing
 from data import load_data, clean_data
 from features import build_features
+from llm_agent import explain_row
 
 # --- Load data once ---
 @st.cache_data
@@ -73,6 +74,7 @@ if st.button("Find Opportunities"):
 
         # Step 2A — Sort by profit
         df_results = df_results.sort_values(by="Expected Profit", ascending=False)
+        
         # Step 3A — Highlight top 3
         st.subheader(" Top Opportunities")
 
@@ -90,9 +92,15 @@ if st.button("Find Opportunities"):
 
             st.subheader("📊 All Opportunities")
             st.dataframe(df_results, use_container_width=True)
+            with st.spinner("Generating explanation..."):
+             explanation = explain_row(row)
+
+st.write("💡 Explanation:")
+st.write(explanation)
+
 
         # Step 2B — Add decision signal
-        def decision_signal(row):
+def decision_signal(row):
             if row["Confidence"] > 0.7 and row["Risk"] < 0.3:
                 return "🟢 Increase Price"
             elif row["Risk"] > 0.5:
@@ -100,9 +108,9 @@ if st.button("Find Opportunities"):
             else:
                 return "🟡 Test Carefully"
 
-        df_results["Decision"] = df_results.apply(decision_signal, axis=1)
+df_results["Decision"] = df_results.apply(decision_signal, axis=1)
 
-        st.dataframe(df_results, use_container_width=True)
+st.dataframe(df_results, use_container_width=True)
 
 
                 
