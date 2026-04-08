@@ -63,10 +63,10 @@ Input Data → Feature Engineering → Demand Model → Price Simulation → Opt
 ## Dashboard Preview
 
 ### Top Opportunities View
-![Top Opportunities](screenshots/top_opportunities.png)
+-check sreenshot folder for images
 
 ### AI Explanation Example
-![LLM Explanation](screenshots/llm_explanation.png)
+-check sreenshot folder for images
 
 ---
 
@@ -115,6 +115,6 @@ This system transforms pricing from:
 
 ---
 
-Author: Emmanuel Achayo**
+Author: Emmanuel Achayo
 
 Data Analyst | Machine Learning | Decision Intelligence Systems
