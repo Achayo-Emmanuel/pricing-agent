@@ -58,10 +58,11 @@ if st.button("Find Opportunities"):
     results = run_batch_pricing(df_feat, top_n=top_n)
 
     if not results:
-       st.warning("No results found")
+        st.warning("No results found")
     else:
         import pandas as pd
 
+        # 1️⃣ CREATE df_results FIRST
         df_results = pd.DataFrame(results)
 
         df_results = df_results[[
@@ -72,35 +73,11 @@ if st.button("Find Opportunities"):
             "SKU", "Recommended Price", "Expected Profit", "Confidence", "Risk"
         ]
 
-        # Step 2A — Sort by profit
+        # 2️⃣ SORT
         df_results = df_results.sort_values(by="Expected Profit", ascending=False)
-        
-        # Step 3A — Highlight top 3
-        st.subheader(" Top Opportunities")
 
-        top3 = df_results.head(3)
-
-        for _, row in top3.iterrows():
-            st.markdown("---")
-            st.subheader(f"SKU: {row['SKU']}")
-
-            col1, col2, col3 = st.columns(3)
-
-            col1.metric("Price", round(row["Recommended Price"], 2))
-            col2.metric("Profit", round(row["Expected Profit"], 2))
-            col3.metric("Decision", row["Decision"])
-
-            st.subheader("📊 All Opportunities")
-            st.dataframe(df_results, use_container_width=True)
-            with st.spinner("Generating explanation..."):
-             explanation = explain_row(row)
-
-            st.write("💡 Explanation:")
-            st.write(explanation)
-
-
-        # Step 2B — Add decision signal
-def decision_signal(row):
+        # 3️⃣ DEFINE FUNCTION
+        def decision_signal(row):
             if row["Confidence"] > 0.7 and row["Risk"] < 0.3:
                 return "🟢 Increase Price"
             elif row["Risk"] > 0.5:
@@ -108,8 +85,8 @@ def decision_signal(row):
             else:
                 return "🟡 Test Carefully"
 
-df_results["Decision"] = df_results.apply(decision_signal, axis=1)
-
+        # 4️⃣ APPLY (ONLY AFTER df_results EXISTS)
+        df_results["Decision"] = df_results.apply(decision_signal, axis=1)
 st.dataframe(df_results, use_container_width=True)
 
 
